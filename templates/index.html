@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %} 
+<div class="py-4">
+    <div class="flex items-center">
+        <h2 class="text-3xl">Explore some code</h2>
+        {% include 'search_form.html' %}
+    </div>
+
+    {% for code_block in code_samples %}
+        {% include 'code_block.html' %}
+    {% endfor %}
+</div>
+{% include 'submit_button.html' %}
+{% endblock content %} 

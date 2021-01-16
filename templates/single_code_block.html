@@ -1,0 +1,16 @@
+<div class="m-3 w-full p-4">
+    <h2 class="my-4 text-4xl text-purple-400"><a href="code/{{code_block['id']}}">{{code_block['title']}}</a></h2>
+    <p>{{code_block['description']}}</p>
+
+    <div class="my-3 p-3 shadow-lg">
+    {{code_block['code']|safe}}
+    </div>
+
+        <div class="my-4">
+            {% for tag in code_block['tags'] %}
+                <small class="mx-1 p-2 rounded-lg bg-gray-200">
+                    <a href="/search?query={{tag}}">{{tag}}</a>
+                </small>
+            {% endfor %}
+        </div>
+</div>
