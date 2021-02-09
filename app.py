@@ -11,13 +11,11 @@ from pygments.formatters import HtmlFormatter
 
 app = Flask(__name__)
 engine = os.environ['ENGINE']
-es_index = os.environ['ES_INDEX']
-
+es_index = 'ugly-code-submissions'
 
 def format_lex(code):
     lexer = guess_lexer(code)
     return highlight(code, lexer, HtmlFormatter())
-
 
 def reformat_code_block(results):
     for x in results:
@@ -39,11 +37,13 @@ def submit():
     if request.method == "POST":
         body = dict(request.form)
         body['tags'] = body['tags'].split(',')
+        es_request = es_client.index(index=es_index, body=body)
+        body['es_id'] = es_request['_id']
         app_search.index_documents(
                 engine,
                 body=[body],
                 ) 
-        return redirect(url_for('index'))
+        return redirect(url_for('get', _id=es_request['_id']))
         
     return render_template('submit_code.html')
 
@@ -57,6 +57,7 @@ def search():
     for x, result in enumerate(results):
         results[x]['code']['raw'] = format_lex(results[x]['code']['raw']) 
 
+    print(results)
     return render_template(
             'search.html',
             meta=meta,
@@ -64,11 +65,25 @@ def search():
             query=q,
             )
 
+
 @app.route('/code/<_id>')
 def get(_id: str):
-    result = client_search.get_documents(engine, body=[_id])
-    result = next(reformat_code_block(result))
-    return render_template('document.html', code_block=result)
+    result = es_client.get(es_index, id=_id)
+    code_block = result['_source']
+    code_block['es_id'] = result['_id']
+    code_block['code'] = format_lex(code_block['code']) # lexer iterates
+    return render_template('document.html', code_block=code_block)
+
+
+@app.route('/api/v1/code/<_id>/update')
+def update(_id: str):
+    metric = request.args.get('metric')
+    new_value = requests.args.get('metric_value')
+    app_search.put_documents(
+            engine=engine,
+            body=[_id],
+            params={metric: metric_value},
+            )
 
 
 if __name__ == '__main__':
